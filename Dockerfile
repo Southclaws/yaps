@@ -4,8 +4,8 @@ WORKDIR /app
 COPY . .
 RUN rustup default nightly && cargo build --release
 
-FROM scratch
+FROM alpine:latest
 
-COPY --from=build /app/target/release/yaps /bin/yaps
+COPY --from=build /app/target/release/yaps /usr/local/bin/yaps
 
 ENTRYPOINT ["yaps"]
