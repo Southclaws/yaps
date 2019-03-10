@@ -1,0 +1,6 @@
+version: "2"
+
+tasks:
+  migrations:
+    cmds:
+      - diesel migrations run

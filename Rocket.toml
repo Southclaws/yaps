@@ -1,0 +1,2 @@
+[global.databases.yaps]
+url = "postgres://yaps:default@localhost/yaps?sslmode=disable"
