@@ -6,6 +6,6 @@ RUN rustup default nightly && cargo build --release
 
 FROM scratch
 
-COPY --from=build /app/target/release/yaps /yaps
+COPY --from=build /app/target/release/yaps /bin/yaps
 
-ENTRYPOINT ["/yaps"]
+ENTRYPOINT ["yaps"]
