@@ -8,4 +8,4 @@ FROM scratch
 
 COPY --from=build /app/target/release/yaps /yaps
 
-ENTRYPOINT /yaps
+ENTRYPOINT ["/yaps"]
