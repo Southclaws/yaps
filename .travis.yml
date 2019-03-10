@@ -5,7 +5,6 @@ language: rust
 install:
   - curl -sL https://taskfile.dev/install.sh | sh
 script:
-  - ./bin/task test
   - |
     if [ "$TRAVIS_BRANCH" = "master" ] && [ "$TRAVIS_PULL_REQUEST" = "false" ];
       then
