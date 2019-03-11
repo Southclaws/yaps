@@ -47,6 +47,14 @@ body {
   background-color: #2f3c3c;
 }
 
+#content p {
+  font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+  font-size: 1em;
+  line-height: 1.5;
+  color: lightgrey;
+  resize: none;
+}
+
 #footer {
   grid-column: 2 / 3;
   grid-row: 4 / 5;

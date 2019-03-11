@@ -13,6 +13,7 @@ use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use dotenv::dotenv;
 use rocket::request::Form;
+use rocket::request::Request;
 use rocket::response::Redirect;
 use rocket_contrib::serve::StaticFiles;
 use rocket_contrib::templates::Template;
@@ -75,6 +76,11 @@ fn api_doc(
     Ok(Redirect::to(format!("/doc/{}", &identifier)))
 }
 
+#[catch(404)]
+fn not_found(_: &Request) -> Template {
+    return Template::render("404", ());
+}
+
 // -
 // Database stuff
 // -
@@ -116,6 +122,7 @@ fn main() {
             "/static",
             StaticFiles::from(concat!(env!("CARGO_MANIFEST_DIR"), "/static")),
         )
+        .register(catchers![not_found])
         .attach(DB::fairing())
         .attach(Template::fairing())
         .launch();
