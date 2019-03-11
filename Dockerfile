@@ -8,7 +8,9 @@ RUN rustup default nightly && \
 
 FROM alpine:latest
 
-COPY --from=build /app/target/x86_64-unknown-linux-musl/release/yaps /usr/local/bin/yaps
-COPY --from=build /app/templates /usr/local/bin/templates
+WORKDIR /app
+COPY --from=build /app/target/x86_64-unknown-linux-musl/release/yaps /app/yaps
+COPY --from=build /app/templates /app/templates
+COPY --from=build /app/static /app/static
 
-ENTRYPOINT yaps
+ENTRYPOINT ./yaps

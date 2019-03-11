@@ -9,12 +9,16 @@ tasks:
   migrations:
     cmds:
       - diesel migrations run
+  up:
+    cmds:
+      - docker-compose up -d
+      - docker-compose logs -f
   build:
     cmds:
       - docker build -t southclaws/yaps:{{ .GIT_COMMIT }} .
   run:
     cmds:
-      - docker run --env-file=.env --entrypoint=/yaps southclaws/yaps:{{ .GIT_COMMIT }}
+      - docker run --env-file=.env southclaws/yaps:{{ .GIT_COMMIT }}
   push:
     cmds:
       - docker push {{.OWNER}}/{{.SERVICE}}:{{.GIT_COMMIT}}

@@ -3,9 +3,13 @@ version: "3.1"
 
 services:
   yaps:
-    image: Southclaws/yaps
+    image: southclaws/yaps
     environment:
-      ROCKET_DATABASES: '{yaps={url="postgres://yaps:${POSTGRES_PASSWORD}@localhost/yaps?sslmode=disable"}}'
+      ROCKET_DATABASES: '{yaps={url="postgres://yaps:${POSTGRES_PASSWORD}@db/yaps?sslmode=disable"}}'
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
 
   db:
     image: postgres
