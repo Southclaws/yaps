@@ -1,4 +1,4 @@
-#![feature(proc_macro_hygiene, decl_macro)]
+#![feature(proc_macro_hygiene, decl_macro, never_type)]
 
 #[macro_use]
 extern crate rocket;
@@ -12,7 +12,10 @@ extern crate serde;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use dotenv::dotenv;
+use rocket::outcome::IntoOutcome;
 use rocket::request::Form;
+use rocket::request::FromRequest;
+use rocket::request::Outcome;
 use rocket::request::Request;
 use rocket::response::Redirect;
 use rocket_contrib::serve::StaticFiles;
@@ -35,6 +38,33 @@ struct DB(PgConnection);
 #[derive(FromForm)]
 struct DocumentSubmission {
     pub content: String,
+}
+
+#[derive(FromForm)]
+struct LoginRequest {
+    pub username: String,
+    pub password: String,
+}
+
+struct User {
+    pub name: String,
+    pub admin: bool,
+}
+
+impl<'a, 'r> FromRequest<'a, 'r> for User {
+    type Error = !;
+
+    fn from_request(request: &'a Request<'r>) -> Outcome<User, !> {
+        request
+            .cookies()
+            .get_private("user_id")
+            .and_then(|cookie| Some(String::from(cookie.value())))
+            .map(|id| User {
+                name: id,
+                admin: false,
+            })
+            .or_forward(())
+    }
 }
 
 // -
