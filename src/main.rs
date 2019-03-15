@@ -6,9 +6,10 @@ extern crate rocket;
 extern crate rocket_contrib;
 #[macro_use]
 extern crate diesel;
+#[macro_use]
+extern crate serde_json;
 extern crate dotenv;
 extern crate serde;
-extern crate serde_json;
 
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
@@ -85,25 +86,38 @@ impl<'a, 'r> FromRequest<'a, 'r> for &'a Context {
                 .cookies()
                 .get_private("user_id")
                 .and_then(|cookie| cookie.value().parse().ok())
-                .map(|user_id: i32| {
-                    use schema::users::dsl::*;
+                .and_then(|user_id: i32| {
+                    let mut obj = serde_json::Map::new();
+                    obj.insert(
+                        String::from("route"),
+                        json!({
+                            "path": request.uri().path(),
+                            "query": request.uri().query()
+                        }),
+                    );
 
-                    let user = users
+                    Some((user_id, obj))
+                })
+                .map(|(user_id, mut obj)| {
+                    use schema::users::dsl::*;
+                    match users
                         .filter(id.eq(user_id))
                         .first::<User>(conn as &PgConnection)
-                        .unwrap();
-
-                    let mut obj = serde_json::Map::new();
-                    obj.insert(String::from("id"), serde_json::to_value(user.id).expect(""));
-                    obj.insert(
-                        String::from("name"),
-                        serde_json::to_value(user.name).expect(""),
-                    );
-                    obj.insert(
-                        String::from("admin"),
-                        serde_json::to_value(user.admin).expect(""),
-                    );
-                    Context(obj)
+                    {
+                        Ok(v) => {
+                            obj.insert(String::from("id"), serde_json::to_value(v.id).expect(""));
+                            obj.insert(
+                                String::from("name"),
+                                serde_json::to_value(v.name).expect(""),
+                            );
+                            obj.insert(
+                                String::from("admin"),
+                                serde_json::to_value(v.admin).expect(""),
+                            );
+                        }
+                        Err(_) => (),
+                    };
+                    Context(obj.clone())
                 })
                 .or(Some(Context::default()))
                 .expect("")
