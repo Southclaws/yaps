@@ -1,4 +1,4 @@
-#![feature(proc_macro_hygiene, decl_macro, never_type)]
+#![feature(proc_macro_hygiene, decl_macro, never_type, type_alias_enum_variants)]
 
 #[macro_use]
 extern crate rocket;
@@ -8,6 +8,7 @@ extern crate rocket_contrib;
 extern crate diesel;
 extern crate dotenv;
 extern crate serde;
+extern crate serde_json;
 
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
@@ -27,6 +28,7 @@ mod model;
 mod schema;
 
 use model::Document;
+use model::User;
 
 // Hooks up the DB connection pool to Rocket
 #[database("yaps")]
@@ -46,24 +48,68 @@ struct LoginRequest {
     pub password: String,
 }
 
-struct User {
-    pub name: String,
-    pub admin: bool,
-}
+struct UserID(i32);
 
-impl<'a, 'r> FromRequest<'a, 'r> for User {
+impl<'a, 'r> FromRequest<'a, 'r> for UserID {
     type Error = !;
 
-    fn from_request(request: &'a Request<'r>) -> Outcome<User, !> {
+    fn from_request(request: &'a Request<'r>) -> Outcome<UserID, !> {
         request
             .cookies()
             .get_private("user_id")
-            .and_then(|cookie| Some(String::from(cookie.value())))
-            .map(|id| User {
-                name: id,
-                admin: false,
-            })
+            .and_then(|cookie| cookie.value().parse().ok())
+            .map(|id| UserID(id))
             .or_forward(())
+    }
+}
+
+#[derive(Clone)]
+struct Context(serde_json::Map<String, serde_json::Value>);
+
+impl Default for Context {
+    fn default() -> Context {
+        let c = serde_json::Map::new();
+
+        Context(c)
+    }
+}
+
+impl<'a, 'r> FromRequest<'a, 'r> for &'a Context {
+    type Error = !;
+
+    fn from_request(request: &'a Request<'r>) -> Outcome<&'a Context, !> {
+        let ctx = request.local_cache(|| {
+            let conn = &request.guard::<DB>().unwrap();
+
+            request
+                .cookies()
+                .get_private("user_id")
+                .and_then(|cookie| cookie.value().parse().ok())
+                .map(|user_id: i32| {
+                    use schema::users::dsl::*;
+
+                    let user = users
+                        .filter(id.eq(user_id))
+                        .first::<User>(conn as &PgConnection)
+                        .unwrap();
+
+                    let mut obj = serde_json::Map::new();
+                    obj.insert(String::from("id"), serde_json::to_value(user.id).expect(""));
+                    obj.insert(
+                        String::from("name"),
+                        serde_json::to_value(user.name).expect(""),
+                    );
+                    obj.insert(
+                        String::from("admin"),
+                        serde_json::to_value(user.admin).expect(""),
+                    );
+                    Context(obj)
+                })
+                .or(Some(Context::default()))
+                .expect("")
+        });
+
+        Outcome::Success(ctx)
     }
 }
 
@@ -76,17 +122,37 @@ fn new() -> Template {
     Template::render("new", ())
 }
 
+#[get("/login")]
+fn login(conn: DB, ctx: &Context) -> Template {
+    Template::render("login_page", ctx.0.clone())
+}
+
+#[post("/login", data = "<login>")]
+fn login_request(conn: DB, login: Form<LoginRequest>) -> Redirect {
+    if login.username != "s" {
+        return Redirect::to("/login");
+    }
+    if login.password != "p" {
+        return Redirect::to("/login");
+    }
+
+    return Redirect::to("/");
+}
+
 #[get("/doc/<identifier>")]
-fn doc<'a>(conn: DB, identifier: String) -> Result<Template, std::io::Error> {
+fn doc<'a>(conn: DB, ctx: &Context, identifier: String) -> Result<Template, std::io::Error> {
     let document = match get_document(&conn, identifier) {
         Ok(v) => v,
-        Err(e) => {
-            println!("{}", e);
-            return Ok(Template::render("document", ()));
+        Err(_) => {
+            return Ok(Template::render("404", ctx.0.clone()));
         }
     };
-    println!("{:?}", document);
-    Ok(Template::render("document", document))
+    let mut ctx = ctx.0.clone();
+    ctx.insert(
+        String::from("document"),
+        serde_json::to_value(document).expect(""),
+    );
+    Ok(Template::render("document", ctx))
 }
 
 #[post("/", data = "<document>")]
@@ -147,7 +213,7 @@ fn main() {
     dotenv().ok();
 
     rocket::ignite()
-        .mount("/", routes![new, doc, api_doc])
+        .mount("/", routes![new, login, login_request, doc, api_doc])
         .mount(
             "/static",
             StaticFiles::from(concat!(env!("CARGO_MANIFEST_DIR"), "/static")),

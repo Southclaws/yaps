@@ -5,16 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <link rel="stylesheet" href="/static/style.css" />
-    <link rel="stylesheet" href="/static/prism.css" />
     <title>{{ title }}</title>
 </head>
 
 <body>
+    <div id="account">
+        <label for="loginModalToggle" id="loginButton">login</label>
+    </div>
     {{~> page}}
     <div id="footer">
         <p>by southclaws</p>
     </div>
-    <script src="/static/prism.js"></script>
+    <input type="checkbox" id="loginModalToggle">
+    <div id="loginModal">
+        {{>login}}
+    </div>
+    <iframe name="hiddenFrame" width="0" height="0" border="0" style="display: none;"></iframe>
 </body>
 
 </html>

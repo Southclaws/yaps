@@ -7,7 +7,7 @@ body {
   font-family: Helvetica, Sans Serif;
 
   display: grid;
-  grid-template-columns: 40px auto 40px;
+  grid-template-columns: 40px 1fr 1fr 40px;
   grid-template-rows: 20px 40px auto 50px;
 }
 
@@ -16,8 +16,64 @@ body {
   grid-row: 2 / 3;
 }
 
+#account {
+  grid-column: 3 / 4;
+  grid-row: 2 / 3;
+  justify-self: right;
+}
+
+#account label {
+  padding: 0px;
+  margin: 0px;
+}
+
+#loginButton {
+  font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+  font-size: 1em;
+  color: grey;
+  cursor: pointer;
+}
+#loginModalToggle {
+  display: none;
+}
+#loginModalToggle:checked ~ #loginModal {
+  display: block;
+}
+#loginModal {
+  display: none;
+  grid-column: 2 / 4;
+  grid-row: 3 / 4;
+  align-self: center;
+  justify-self: center;
+}
+.loginForm {
+  display: inherit;
+  grid-column: 2 / 4;
+  grid-row: 3 / 4;
+  align-self: center;
+  justify-self: center;
+  background-color: #3f4c4c;
+  border: black;
+  border-style: solid;
+  border-width: 1px;
+  width: 200px;
+  height: 100px;
+}
+
+.loginForm form {
+  margin-top: 4%;
+  text-align: center;
+}
+
+.loginForm input {
+  border: none;
+  padding: 10px;
+  margin: 4px;
+  background-color: slategrey;
+}
+
 #content {
-  grid-column: 2 / 3;
+  grid-column: 2 / 4;
   grid-row: 3 / 4;
   height: 100%;
 }
@@ -56,7 +112,7 @@ body {
 }
 
 #footer {
-  grid-column: 2 / 3;
+  grid-column: 2 / 4;
   grid-row: 4 / 5;
 
   text-align: center;
